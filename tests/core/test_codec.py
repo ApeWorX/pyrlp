@@ -74,3 +74,25 @@ def test_consume_item():
     ]
     assert end == 123
     assert per_item_rlp[0] == rlp
+
+
+@pytest.mark.parametrize("binary_type", [bytes, bytearray])
+@pytest.mark.parametrize(
+    "item",
+    [
+        [],
+        [b"a"],
+        [b"a" * 56, b"b" * 32],
+        [b"a", [b"b", []], b"c" * 64],
+    ],
+)
+def test_consume_list_rlp_excludes_surrounding_bytes(item, binary_type):
+    encoded = encode(item)
+    prefix = b"prefix"
+    data = binary_type(prefix + encoded + b"trailing")
+    decoded, per_item_rlp, end = consume_item(data, len(prefix))
+
+    assert decoded == item
+    assert end == len(prefix) + len(encoded)
+    assert per_item_rlp[0] == encoded
+    assert isinstance(per_item_rlp[0], binary_type)

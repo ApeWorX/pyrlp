@@ -232,21 +232,17 @@ def consume_payload(rlp, prefix, start, type_, length):
     elif type_ is list:
         items = []
         per_item_rlp = []
-        list_rlp = prefix
         next_item_start = start
         end = next_item_start + length
         while next_item_start < end:
             p, t, l, s = consume_length_prefix(rlp, next_item_start)
             item, item_rlp, next_item_start = consume_payload(rlp, p, s, t, l)
             per_item_rlp.append(item_rlp)
-            # When the item returned above is a single element, item_rlp will also
-            # contain a single element, but when it's a list, the first element will be
-            # the RLP of the whole List, which is what we want here.
-            list_rlp += item_rlp[0]
             items.append(item)
-        per_item_rlp.insert(0, list_rlp)
         if next_item_start > end:
             raise DecodingError("List length prefix announced a too small length", rlp)
+        # Reuse the encoded payload instead of rebuilding it from each child.
+        per_item_rlp.insert(0, prefix + rlp[start:end])
         return (items, per_item_rlp, next_item_start)
     else:
         raise TypeError("Type must be either list or bytes")
