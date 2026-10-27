@@ -48,6 +48,14 @@ def test_inference(value, expected):
             infer_sedes(value)
 
 
+@pytest.mark.parametrize("element", ["Hat", "", b"", bytearray()])
+@pytest.mark.parametrize("nested", [False, True])
+def test_list_sedes_rejects_string_and_binary_elements(element, nested):
+    elements = [[element]] if nested else [element]
+    with pytest.raises(TypeError, match="sedes objects"):
+        List(elements)
+
+
 def test_list_sedes():
     l1 = List()
     l2 = List((big_endian_int, big_endian_int))
