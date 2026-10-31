@@ -39,6 +39,9 @@ def decode_lazy(rlp, sedes=None, **sedes_kwargs):
     :returns: either the already decoded and deserialized object (if encoded as
               a string) or an instance of :class:`rlp.LazyList`
     """
+    if isinstance(rlp, memoryview):
+        rlp = bytes(rlp)
+
     item, end = consume_item_lazy(rlp, 0)
     if end != len(rlp):
         raise DecodingError("RLP length prefix announced wrong length", rlp)

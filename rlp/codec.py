@@ -290,6 +290,9 @@ def decode(rlp, sedes=None, strict=True, recursive_cache=False, **kwargs):
              item and `strict` is true
     :raises: :exc:`rlp.DeserializationError` if the deserialization fails
     """
+    if isinstance(rlp, memoryview):
+        rlp = bytes(rlp)
+
     if not is_bytes(rlp):
         raise DecodingError(
             "Can only decode RLP bytes, got type %s" % type(rlp).__name__, rlp
