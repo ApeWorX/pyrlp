@@ -119,3 +119,12 @@ def generate_test_functions():
 
 
 generate_test_functions()
+
+
+@pytest.mark.skipif(not do_benchmark, reason="pytest-benchmark is not installed")
+@pytest.mark.benchmark(group="eager-wide-list")
+@pytest.mark.parametrize("num_items", [8, 1000, 4000])
+def test_eager_wide_list(benchmark, num_items):
+    items = [b"x" * 32] * num_items
+    encoded = rlp.encode(items)
+    assert benchmark(rlp.decode, encoded) == items
