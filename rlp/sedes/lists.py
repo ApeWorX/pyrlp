@@ -58,7 +58,7 @@ class List(list):
             for e in elements:
                 if is_sedes(e):
                     self.append(e)
-                elif isinstance(e, Sequence):
+                elif is_sequence(e):
                     self.append(List(e))
                 else:
                     raise TypeError(
