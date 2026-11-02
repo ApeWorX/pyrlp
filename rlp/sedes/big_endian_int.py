@@ -3,6 +3,9 @@ from eth_utils import (
     int_to_big_endian,
 )
 
+from rlp.atomic import (
+    Atomic,
+)
 from rlp.exceptions import (
     DeserializationError,
     SerializationError,
@@ -42,6 +45,11 @@ class BigEndianInt:
             return s
 
     def deserialize(self, serial):
+        if not isinstance(serial, Atomic):
+            raise DeserializationError(
+                f"Objects of type {type(serial).__name__} cannot be deserialized",
+                serial,
+            )
         if self.length is not None and len(serial) != self.length:
             raise DeserializationError("Invalid serialization (wrong size)", serial)
         if self.length is None and len(serial) > 0 and serial[0:1] == b"\x00":

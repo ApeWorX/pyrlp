@@ -5,12 +5,16 @@ from eth_utils import (
     int_to_big_endian,
 )
 
+import rlp
 from rlp import (
+    DeserializationError,
     SerializationError,
 )
 from rlp.sedes import (
     BigEndianInt,
+    List,
     big_endian_int,
+    binary,
 )
 from rlp.utils import (
     ALL_BYTES,
@@ -83,6 +87,40 @@ def test_fixedlength():
     for i in (256**4, 256**4 + 1, 256**5, -1, -256, "asdf"):
         with pytest.raises(SerializationError):
             s.serialize(i)
+
+
+@pytest.mark.parametrize("serial", [[], (), [b""], [b"\x05"], [[]], [b"\x01", b"\x02"]])
+@pytest.mark.parametrize("sedes", [big_endian_int, BigEndianInt(1), BigEndianInt(2)])
+def test_deserialize_rejects_lists(sedes, serial):
+    with pytest.raises(DeserializationError, match="cannot be deserialized"):
+        sedes.deserialize(serial)
+
+
+@pytest.mark.parametrize(
+    "encoded",
+    [
+        b"\xc1\xc0",  # [[]]: an empty list where an integer is expected
+        b"\xc2\xc1\x05",  # [[0x05]]
+        b"\xc2\xc1\x80",  # [[b""]]
+    ],
+)
+def test_decode_rejects_list_in_integer_field(encoded):
+    with pytest.raises(DeserializationError):
+        rlp.decode(encoded, List([big_endian_int]))
+
+
+def test_decode_serializable_rejects_list_in_integer_field():
+    class Tx(rlp.Serializable):
+        fields = [("nonce", big_endian_int), ("to", binary)]
+
+    canonical = rlp.encode(Tx(0, b"\x11" * 20))
+    assert rlp.decode(canonical, Tx).nonce == 0
+
+    # same payload with the nonce encoded as an empty list (0xc0) instead of 0x80
+    nonce_as_list = rlp.encode([[], b"\x11" * 20])
+    assert nonce_as_list != canonical
+    with pytest.raises(DeserializationError):
+        rlp.decode(nonce_as_list, Tx)
 
 
 def packl(lnum):
