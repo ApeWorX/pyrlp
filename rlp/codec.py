@@ -48,7 +48,7 @@ except ImportError:
 
     def encode_raw(item):
         r"""RLP encode (a nested sequence of) :class:`Atomic`\s."""
-        if isinstance(item, Atomic):
+        if type(item) is bytes or isinstance(item, Atomic):
             if len(item) == 1 and item[0] < 128:
                 return item
             payload = item
