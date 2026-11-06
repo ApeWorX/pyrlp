@@ -267,6 +267,14 @@ class BaseSerializable(collections.abc.Sequence):
         except ListDeserializationError as e:
             raise ObjectDeserializationError(serial=serial, sedes=cls, list_exception=e)
 
+        if (
+            not extra_kwargs
+            and cls.__init__ is BaseSerializable.__init__
+            and cls.__new__ is object.__new__
+            and type(cls).__call__ is type.__call__
+        ):
+            return cls(*values)
+
         args_as_kwargs = merge_args_to_kwargs(values, {}, cls._meta.field_names)
         return cls(**args_as_kwargs, **extra_kwargs)
 
