@@ -5,6 +5,7 @@ from eth_utils import (
 )
 
 from rlp import (
+    codec,
     decode,
     encode,
 )
@@ -17,6 +18,30 @@ from rlp.exceptions import (
 )
 
 EMPTYLIST = encode([])
+
+
+@pytest.mark.parametrize("length", (0, 1, 55, 56, 256))
+def test_encode_raw_bytes_lengths(length):
+    value = b"\x80" * length
+    assert decode(encode([value], infer_serializer=False)) == [value]
+
+
+@pytest.mark.skipif(not hasattr(codec, "Atomic"), reason="Python codec only")
+def test_encode_raw_preserves_atomic_subclasses_and_virtual_subclasses():
+    class BytesSubclass(bytes):
+        def __getitem__(self, index):
+            return 1
+
+    class VirtualAtomic:
+        def __len__(self):
+            return 1
+
+        def __getitem__(self, index):
+            return 1
+
+    codec.Atomic.register(VirtualAtomic)
+    for value in (BytesSubclass(b"\x80"), VirtualAtomic()):
+        assert codec.encode_raw(value) is value
 
 
 def compare_length(rlpdata, length):
